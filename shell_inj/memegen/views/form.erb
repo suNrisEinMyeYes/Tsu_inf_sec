@@ -1,0 +1,15 @@
+<html>
+    <head>
+        <title>Image Upload</title>
+    </head>
+    <body>
+        <h1>Upload Image</h1>
+        
+        <form action="/save_image" method="POST" enctype="multipart/form-data">
+            <input type="file" name="my_file"><br>
+            <input type="text" name="top_text" placeholder="top text"><br>
+            <input type="text" name="bottom_text" placeholder="bottom text"><br>
+            <input type="submit" value="Upload image"><br>
+        </form>
+    </body>
+</html>
