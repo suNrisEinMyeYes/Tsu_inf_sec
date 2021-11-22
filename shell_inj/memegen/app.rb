@@ -2,6 +2,7 @@
 require 'sinatra'
 require 'securerandom'
 require './auth.rb'
+require "rmagick"
 
 enable :sessions
 set :port, 3001
@@ -19,18 +20,34 @@ post "/save_image" do
 
   output_name = SecureRandom.uuid + File.extname(input_name)
 
-  size = `identify -format "%[fx:w]x%[fx:h]" #{temp_name}`
+  img = Magick::ImageList.new(temp_name)
+  
 
-  `convert '#{temp_name}' \
-  -set comment "{\\"top\\": \\"#{params[:top_text]}\\", \\"bot\\": \\"#{params[:bottom_text]}\\"}" \
-  -gravity North \
-   \\( -size #{size} xc:none -font Impact -pointsize 50 -stroke black -strokewidth 7 -annotate 0 '#{params[:top_text]}' -blur 0x1 \\) -composite \
-   -size #{size} -font Impact -fill white -pointsize 50 -stroke none -annotate 0 '#{params[:top_text]}' \
-   -gravity South \
-   \\( -size #{size} xc:none -font Impact -pointsize 50 -stroke black -strokewidth 7 -annotate 0 '#{params[:bottom_text]}' -blur 0x1 \\) \
-   -size #{size} -font Impact -fill white -pointsize 50 -stroke none -annotate 0 '#{params[:bottom_text]}' -composite \
-   'public/uploads/#{output_name}'
-  `
+  text = Magick::Draw.new
+  
+  text.annotate(img, 0,0,0,0, params[:top_text]) do
+    text.gravity = Magick::NorthGravity
+    self.pointsize = 50
+    text.font = "/app/fonts/impact.ttf"
+    self.font_weight = Magick::BoldWeight
+    self.stroke = "none"
+  end
+  
+  text.annotate(img, 0,0,0,0, params[:bottom_text]) do
+    text.gravity = Magick::SouthGravity
+    self.pointsize = 50
+    text.font = "/app/fonts/impact.ttf"
+    self.font_weight = Magick::BoldWeight
+    self.stroke = "none"
+  end
+
+  print("DEBUG\n")
+  puts(img.cur_image())
+  puts(img[0]["info"])
+  print("DEBUG\n")
+  img.cur_image[:comment] = "{\"top\" : \"#{params[:top_text]}\", \"bot\" : \"#{params[:bottom_text]}\"}"
+
+  img.write("public/uploads/" + output_name) # Destination image
 
   if current_user
     @filename = output_name
